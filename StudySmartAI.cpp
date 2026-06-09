@@ -2,7 +2,7 @@
  * ============================================================================
  * StudySmart AI - Smart Academic Planning Application
  * Course: CST207 Design and Analysis of Algorithms
- * Group: [Your Group Name]
+ * Group: 不知道啊
  * ============================================================================
  *
  * Description:
