@@ -243,6 +243,85 @@ struct SelectionResult {
  * Time Complexity: O(n * W)  where W = time limit (in suitable units)
  * Space Complexity: O(n * W)
  */
+ SelectionResult runDynamicProgramming(const Scenario& scenario)
+{
+    clock_t startTime = clock();
+
+    vector<StudyTask> tasks = scenario.tasks;
+    int n = tasks.size();
+
+    // Available study time = Knapsack Capacity
+    int capacity = static_cast<int>(scenario.totalAvailableTime);
+
+    // DP Table
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));
+
+    // Build DP table
+    for (int i = 1; i <= n; i++)
+    {
+        int taskTime = static_cast<int>(tasks[i - 1].studyTime);
+        int taskImportance = tasks[i - 1].importance;
+
+        for (int w = 0; w <= capacity; w++)
+        {
+            if (taskTime <= w)
+            {
+                dp[i][w] = max(
+                    dp[i - 1][w],
+                    dp[i - 1][w - taskTime] + taskImportance
+                );
+            }
+            else
+            {
+                dp[i][w] = dp[i - 1][w];
+            }
+        }
+    }
+
+    // Backtracking: find selected tasks
+    vector<int> selectedTaskIds;
+    double totalStudyTime = 0;
+    int totalImportance = dp[n][capacity];
+
+    int w = capacity;
+
+    for (int i = n; i > 0; i--)
+    {
+        if (dp[i][w] != dp[i - 1][w])
+        {
+            selectedTaskIds.push_back(tasks[i - 1].id);
+
+            totalStudyTime += tasks[i - 1].studyTime;
+
+            w -= static_cast<int>(tasks[i - 1].studyTime);
+        }
+    }
+
+    reverse(selectedTaskIds.begin(), selectedTaskIds.end());
+
+    clock_t endTime = clock();
+
+    double executionTime =
+        static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC;
+
+    SelectionResult result;
+
+    result.algorithmName = "Dynamic Programming";
+
+    result.selectedTaskIds = selectedTaskIds;
+
+    result.totalStudyTime = totalStudyTime;
+
+    result.totalImportance = totalImportance;
+
+    result.executionTime = executionTime;
+
+    result.description =
+        "0/1 Knapsack DP selects the combination of study tasks "
+        "with maximum total importance under the available study time.";
+
+    return result;
+}
 
 // ============================================================================
 // Module 5: AI/ML Module - k-Nearest Neighbours (k-NN)
