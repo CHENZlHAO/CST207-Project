@@ -45,7 +45,7 @@ using namespace std;
  * StudyTask - Represents a single study task with all relevant attributes.
  */
 struct StudyTask {
-    int    id;                // Unique task identifier
+    string    id;                // Unique task identifier
     string name;              // Task name / topic
     double studyTime;         // Estimated study time (hours)
     int    importance;        // Importance score (1-10)
@@ -74,7 +74,7 @@ struct Scenario {
  */
 struct SelectionResult {
     string algorithmName;
-    vector<int> selectedTaskIds;
+    vector<string> selectedTaskIds;
     double totalStudyTime;
     int totalImportance;
     double executionTime;
@@ -279,7 +279,7 @@ struct SelectionResult {
     }
 
     // Backtracking: find selected tasks
-    vector<int> selectedTaskIds;
+    vector<string> selectedTaskIds;
     double totalStudyTime = 0;
     int totalImportance = dp[n][capacity];
 
