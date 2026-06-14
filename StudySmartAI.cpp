@@ -217,6 +217,103 @@ struct SelectionResult {
  * Time Complexity: O(n log n)
  * Space Complexity: O(n)
  */
+ double getEfficiencyScore(const StudyTask& task)
+{
+    return static_cast<double>(task.importance) / task.studyTime;
+}
+
+void mergeByEfficiency(vector<StudyTask>& tasks, int left, int mid, int right)
+{
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    vector<StudyTask> L(n1);
+    vector<StudyTask> R(n2);
+
+    for (int i = 0; i < n1; i++)
+        L[i] = tasks[left + i];
+
+    for (int j = 0; j < n2; j++)
+        R[j] = tasks[mid + 1 + j];
+
+    int i = 0, j = 0, k = left;
+
+    while (i < n1 && j < n2)
+    {
+        double scoreL = getEfficiencyScore(L[i]);
+        double scoreR = getEfficiencyScore(R[j]);
+
+        if (scoreL > scoreR ||
+            (scoreL == scoreR && L[i].importance > R[j].importance))
+        {
+            tasks[k++] = L[i++];
+        }
+        else
+        {
+            tasks[k++] = R[j++];
+        }
+    }
+
+    while (i < n1)
+        tasks[k++] = L[i++];
+
+    while (j < n2)
+        tasks[k++] = R[j++];
+}
+
+void mergeSortByEfficiency(vector<StudyTask>& tasks, int left, int right)
+{
+    if (left >= right)
+        return;
+
+    int mid = left + (right - left) / 2;
+
+    mergeSortByEfficiency(tasks, left, mid);
+    mergeSortByEfficiency(tasks, mid + 1, right);
+
+    mergeByEfficiency(tasks, left, mid, right);
+}
+
+SelectionResult runSorting(const Scenario& scenario)
+{
+    clock_t startTime = clock();
+
+    vector<StudyTask> tasks = scenario.tasks;
+
+    if (!tasks.empty())
+    {
+        mergeSortByEfficiency(tasks, 0, tasks.size() - 1);
+    }
+
+    vector<string> selectedTaskIds;
+    double totalStudyTime = 0;
+    int totalImportance = 0;
+
+    // Sorting module mainly produces a priority ranking.
+    // To fit the SelectionResult format, tasks are recorded in ranked order
+    // until the available study time is reached.
+    for (const StudyTask& task : tasks)
+    {
+        if (totalStudyTime + task.studyTime <= scenario.totalAvailableTime)
+        {
+            selectedTaskIds.push_back(task.id);
+            totalStudyTime += task.studyTime;
+            totalImportance += task.importance;
+        }
+    }
+
+    clock_t endTime = clock();
+
+    SelectionResult result;
+    result.algorithmName = "Sorting-based Ranking";
+    result.selectedTaskIds = selectedTaskIds;
+    result.totalStudyTime = totalStudyTime;
+    result.totalImportance = totalImportance;
+    result.executionTime = static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC;
+    result.description = "Merge Sort ranks tasks by efficiency score.";
+
+    return result;
+}
 
 // ============================================================================
 // Module 3: Greedy Algorithm - Task Selection
@@ -230,6 +327,51 @@ struct SelectionResult {
  * Time Complexity: O(n log n)
  * Space Complexity: O(n)
  */
+bool compareByEfficiency(const StudyTask& a, const StudyTask& b)
+{
+    double ratioA = getEfficiencyScore(a);
+    double ratioB = getEfficiencyScore(b);
+
+    if (ratioA == ratioB)
+        return a.studyTime < b.studyTime;
+
+    return ratioA > ratioB;
+}
+
+SelectionResult runGreedy(const Scenario& scenario)
+{
+    clock_t startTime = clock();
+
+    vector<StudyTask> tasks = scenario.tasks;
+
+    sort(tasks.begin(), tasks.end(), compareByEfficiency);
+
+    vector<string> selectedTaskIds;
+    double totalStudyTime = 0;
+    int totalImportance = 0;
+
+    for (const StudyTask& task : tasks)
+    {
+        if (totalStudyTime + task.studyTime <= scenario.totalAvailableTime)
+        {
+            selectedTaskIds.push_back(task.id);
+            totalStudyTime += task.studyTime;
+            totalImportance += task.importance;
+        }
+    }
+
+    clock_t endTime = clock();
+
+    SelectionResult result;
+    result.algorithmName = "Greedy Strategy";
+    result.selectedTaskIds = selectedTaskIds;
+    result.totalStudyTime = totalStudyTime;
+    result.totalImportance = totalImportance;
+    result.executionTime = static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC;
+    result.description = "Greedy strategy selects tasks by highest importance-to-study-time ratio first.";
+
+    return result;
+}
 
 // ============================================================================
 // Module 4: Dynamic Programming (0/1 Knapsack)
