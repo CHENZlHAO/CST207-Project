@@ -1,0 +1,16 @@
+Scenario 1: Low-pressure / Balanced|28
+T1,Attend Divide-and-Conquer Lecture,Lecture,2,7,7,3
+T2,Complete Greedy and DP Tutorial,Tutorial,2,7,6,3
+T3,Practice Algorithm Midterm Questions,Practice,2,8,8,3
+T4,Finish StudySmart AI Algorithm Module,Assignment,3,8,9,3
+T5,Review ERD and Normalization Concepts,Revision,2,7,7,3
+T6,Complete SQL Access Control Lab,Practice,2,6,6,2
+T7,Finish Database Project Report Section,Assignment,3,7,8,3
+T8,Attend Database Group Project Meeting,Assignment,1,5,5,2
+T9,Attend C++ File Handling Lecture,Lecture,2,6,8,2
+T10,Debug C++ Menu and Input Handling,Practice,2,7,7,3
+T11,Complete C++ Pointer and Vector Exercises,Tutorial,2,6,6,3
+T12,Revise Software Engineering Design Principles,Revision,2,7,9,3
+T13,Practice Use Case and Class Diagram Questions,Practice,2,7,8,3
+T14,Complete FYP Thesis Submission Draft,Assignment,3,8,10,3
+T15,Prepare FYP Presentation and Supervisor Meeting,Assignment,2,7,9,3

@@ -1,30 +1,13 @@
 /**
- * ============================================================================
  * StudySmart AI - Smart Academic Planning Application
- * Course: CST207 Design and Analysis of Algorithms
- * Group: 不知道啊
- * ============================================================================
+ * CST207 Design and Analysis of Algorithms
+ * Group: [your group name]
  *
- * Description:
- *   StudySmart AI simulates a smart academic planning application. The system
- *   receives a set of study tasks and helps the student decide which tasks
- *   should be prioritized and which planning strategy is most suitable.
- *
- * Algorithms Implemented:
- *   1. Merge Sort (Divide & Conquer)    - Rank tasks by deadline/importance
- *   2. Greedy Algorithm                 - Select tasks by urgency/importance
- *   3. Dynamic Programming (Knapsack)   - Optimise task selection under time limit
- *   4. k-Nearest Neighbours (AI/ML)    - Recommend the best strategy
- *
- * Compilation:
- *   g++ -std=c++11 -o StudySmartAI StudySmartAI.cpp
- *
- * Execution:
- *   ./StudySmartAI
- * ============================================================================
+ * 功能: 从csv读取scenario数据 -> merge sort排序 -> greedy选择 -> DP背包 -> k-NN策略推荐
  */
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -34,44 +17,30 @@
 #include <limits>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 
 using namespace std;
 
 // ============================================================================
-// Data Structures
+// Data Structures (from original code)
 // ============================================================================
 
-/**
- * StudyTask - Represents a single study task with all relevant attributes.
- */
 struct StudyTask {
-    string    id;                // Unique task identifier
-    string name;              // Task name / topic
-    double studyTime;         // Estimated study time (hours)
-    int    importance;        // Importance score (1-10)
-    int    deadline;          // Deadline / urgency (days until due)
-    int    difficulty;        // Difficulty level (1-5)
-    string taskType;          // Lecture, Tutorial, Assignment, Practice, Revision
-
-    /*
-     * Computed attributes (to be implemented):
-     *   - urgencyRatio  = importance / deadline
-     *   - efficiency    = importance / studyTime
-     */
+    string id;
+    string name;
+    double studyTime;
+    int    importance;
+    int    deadline;
+    int    difficulty;
+    string taskType;
 };
 
-/**
- * Scenario - Contains a set of tasks and total available study time.
- */
 struct Scenario {
     string name;
     vector<StudyTask> tasks;
     double totalAvailableTime;
 };
 
-/**
- * SelectionResult - Stores the output of a task selection algorithm.
- */
 struct SelectionResult {
     string algorithmName;
     vector<string> selectedTaskIds;
@@ -82,128 +51,58 @@ struct SelectionResult {
 };
 
 // ============================================================================
-// Module 1: Task Scenario Generation / Input
+// Module 1: read scenario data from csv
 // ============================================================================
+// csv exported from StudySmartAI_Scenario_Settings.xlsx sheets 4-7
+// format: first line "name|availTime", then "id,name,type,studyTime,imp,deadline,diff"
 
-/*
- * Study-task base list (15 tasks covering 5 course areas):
- *
- * Task ID | Task Name                                       | Course/Area                | Type
- * --------+-------------------------------------------------+----------------------------+-----------
- * T1      | Attend Divide-and-Conquer Lecture               | Design and Analysis of ... | Lecture
- * T2      | Complete Greedy and DP Tutorial                 | Design and Analysis of ... | Tutorial
- * T3      | Practice Algorithm Midterm Questions             | Design and Analysis of ... | Practice
- * T4      | Finish StudySmart AI Algorithm Module            | Design and Analysis of ... | Assignment
- * T5      | Review ERD and Normalization Concepts            | Database                   | Revision
- * T6      | Complete SQL Access Control Lab                  | Database                   | Practice
- * T7      | Finish Database Project Report Section           | Database                   | Assignment
- * T8      | Attend Database Group Project Meeting            | Database                   | Assignment
- * T9      | Attend C++ File Handling Lecture                  | C++ Programming            | Lecture
- * T10     | Debug C++ Menu and Input Handling                | C++ Programming            | Practice
- * T11     | Complete C++ Pointer and Vector Exercises         | C++ Programming            | Tutorial
- * T12     | Revise Software Engineering Design Principles    | Software Engineering       | Revision
- * T13     | Practice Use Case and Class Diagram Questions     | Software Engineering       | Practice
- * T14     | Complete FYP Thesis Submission Draft             | FYP                        | Assignment
- * T15     | Prepare FYP Presentation and Supervisor Meeting  | FYP                        | Assignment
- */
+vector<string> splitStr(const string& s, char delim) {
+    vector<string> parts;
+    string cur;
+    for (char c : s) {
+        if (c == delim) { parts.push_back(cur); cur = ""; }
+        else cur += c;
+    }
+    parts.push_back(cur);
+    return parts;
+}
 
-/*
- * Scenario 1: Low-pressure / Balanced
- *   Available Time: 28h | Total Required: 32h | Time Pressure Ratio: 1.14
- *   Deadline Tightness: 0.00 | Importance Variation: 0.12 | Avg Difficulty: 2.8
- *
- * Task ID | Study Time | Importance | Deadline | Difficulty
- * --------+------------+------------+----------+------------
- * T1      | 3          | 7          | 6        | 3
- * T2      | 2          | 6          | 5        | 3
- * T3      | 2          | 7          | 5        | 3
- * T4      | 3          | 8          | 7        | 3
- * T5      | 2          | 7          | 6        | 3
- * T6      | 2          | 7          | 5        | 3
- * T7      | 2          | 7          | 6        | 3
- * T8      | 1          | 6          | 7        | 2
- * T9      | 2          | 7          | 7        | 3
- * T10     | 2          | 7          | 6        | 3
- * T11     | 2          | 7          | 8        | 3
- * T12     | 2          | 7          | 7        | 3
- * T13     | 2          | 7          | 6        | 3
- * T14     | 3          | 8          | 5        | 3
- * T15     | 2          | 6          | 8        | 2
- */
+Scenario readScenarioCSV(const string& filename) {
+    ifstream f(filename);
+    Scenario sc;
+    string line;
 
-/*
- * Scenario 2: High-pressure
- *   Available Time: 22h | Total Required: 53h | Time Pressure Ratio: 2.41
- *   Deadline Tightness: 0.07 | Importance Variation: 0.12 | Avg Difficulty: 4.27
- *
- * Task ID | Study Time | Importance | Deadline | Difficulty
- * --------+------------+------------+----------+------------
- * T1      | 4          | 6          | 5        | 4
- * T2      | 3          | 7          | 3        | 4
- * T3      | 3          | 6          | 1        | 4
- * T4      | 4          | 8          | 4        | 5
- * T5      | 3          | 7          | 5        | 4
- * T6      | 4          | 6          | 5        | 4
- * T7      | 4          | 7          | 5        | 4
- * T8      | 2          | 5          | 5        | 4
- * T9      | 3          | 7          | 5        | 4
- * T10     | 4          | 7          | 4        | 5
- * T11     | 3          | 6          | 5        | 4
- * T12     | 4          | 7          | 5        | 4
- * T13     | 4          | 7          | 5        | 5
- * T14     | 5          | 8          | 4        | 5
- * T15     | 3          | 7          | 5        | 4
- */
+    if (!getline(f, line)) return sc;
+    auto p = splitStr(line, '|');
+    sc.name = p[0];
+    sc.totalAvailableTime = stod(p[1]);
 
-/*
- * Scenario 3: Deadline-focused
- *   Available Time: 24h | Total Required: 41h | Time Pressure Ratio: 1.71
- *   Deadline Tightness: 0.73 | Importance Variation: 0.12 | Avg Difficulty: 3.2
- *
- * Task ID | Study Time | Importance | Deadline | Difficulty
- * --------+------------+------------+----------+------------
- * T1      | 3          | 7          | 2        | 3
- * T2      | 3          | 8          | 2        | 4
- * T3      | 2          | 7          | 1        | 3
- * T4      | 3          | 8          | 3        | 4
- * T5      | 3          | 7          | 1        | 3
- * T6      | 2          | 7          | 2        | 3
- * T7      | 3          | 7          | 3        | 3
- * T8      | 2          | 5          | 2        | 2
- * T9      | 2          | 6          | 4        | 3
- * T10     | 3          | 7          | 3        | 3
- * T11     | 2          | 6          | 5        | 3
- * T12     | 3          | 7          | 4        | 3
- * T13     | 3          | 8          | 2        | 4
- * T14     | 4          | 8          | 3        | 4
- * T15     | 3          | 7          | 5        | 3
- */
+    while (getline(f, line)) {
+        auto cols = splitStr(line, ',');
+        if (cols.size() >= 7) {
+            StudyTask t;
+            t.id         = cols[0];
+            t.name       = cols[1];
+            t.taskType   = cols[2];
+            t.studyTime  = stod(cols[3]);
+            t.importance = stoi(cols[4]);
+            t.deadline   = stoi(cols[5]);
+            t.difficulty = stoi(cols[6]);
+            sc.tasks.push_back(t);
+        }
+    }
+    return sc;
+}
 
-/*
- * Scenario 4: Importance-focused
- *   Available Time: 26h | Total Required: 41h | Time Pressure Ratio: 1.58
- *   Deadline Tightness: 0.00 | Importance Variation: 0.40 | Avg Difficulty: 3.27
- *
- * Task ID | Study Time | Importance | Deadline | Difficulty
- * --------+------------+------------+----------+------------
- * T1      | 3          | 4          | 6        | 3
- * T2      | 2          | 5          | 5        | 3
- * T3      | 3          | 10         | 5        | 4
- * T4      | 3          | 6          | 7        | 3
- * T5      | 2          | 4          | 6        | 3
- * T6      | 2          | 5          | 8        | 3
- * T7      | 3          | 3          | 7        | 3
- * T8      | 2          | 4          | 8        | 2
- * T9      | 2          | 5          | 9        | 3
- * T10     | 3          | 6          | 6        | 3
- * T11     | 2          | 4          | 7        | 3
- * T12     | 3          | 5          | 9        | 3
- * T13     | 3          | 10         | 5        | 4
- * T14     | 5          | 10         | 6        | 5
- * T15     | 3          | 9          | 7        | 4
- */
+vector<Scenario> loadAllScenarios() {
+    vector<Scenario> scenarios;
+    for (int i = 1; i <= 4; i++) {
+        string fname = "scenario_" + to_string(i) + ".csv";
+        scenarios.push_back(readScenarioCSV(fname));
+    }
+    return scenarios;
+}
 
-// ============================================================================
 // Module 2: Sorting / Divide-and-Conquer
 // ============================================================================
 
@@ -466,58 +365,222 @@ SelectionResult runGreedy(const Scenario& scenario)
 }
 
 // ============================================================================
-// Module 5: AI/ML Module - k-Nearest Neighbours (k-NN)
-// ============================================================================
-
-/*
- * TODO: Implement a k-NN classifier to predict the best planning
- *       strategy based on scenario features:
- *         - Number of tasks
- *         - Average importance
- *         - Average deadline
- *         - Average difficulty
- *         - Time pressure ratio (required time / available time)
- *
- * Training data should be generated or provided based on simulated
- * scenario outcomes.
- */
 
 // ============================================================================
-// Module 6: Performance Measurement & Strategy Comparison
+// Module 5: k-NN strategy recommendation
+// ============================================================================
+// 从excel的4个scenario出发，对每个scenario改变availTime产生变体作为训练样本
+// 特征：total required time, avail time, pressure ratio, avg importance,
+//        deadline tightness (deadline<=3的比例), importance variation (CV)
+
+struct Feat {
+    double totalReq;
+    double avail;
+    double pressure;
+    double avgImp;
+    double deadlineTight;
+    double impVar;
+};
+
+Feat getFeatures(const Scenario& s) {
+    Feat f;
+    f.avail = s.totalAvailableTime;
+    f.totalReq = 0;
+    double sumImp = 0, sumSq = 0;
+    int urgentCnt = 0;
+
+    for (const auto& t : s.tasks) {
+        f.totalReq += t.studyTime;
+        sumImp     += t.importance;
+        sumSq      += (double)t.importance * t.importance;
+        if (t.deadline <= 3) urgentCnt++;
+    }
+
+    int n = (int)s.tasks.size();
+    f.pressure      = f.totalReq / f.avail;
+    f.avgImp        = sumImp / n;
+    f.deadlineTight = (double)urgentCnt / n;
+
+    double variance = sumSq / n - f.avgImp * f.avgImp;
+    if (variance < 0) variance = 0;
+    f.impVar = (f.avgImp > 0) ? sqrt(variance) / f.avgImp : 0;
+
+    return f;
+}
+
+int bestStrategy(const SelectionResult& a, const SelectionResult& b, const SelectionResult& c) {
+    // dp 理论上最优，在同分的情况下优先选dp
+    int best = c.totalImportance, idx = 2;
+    if (b.totalImportance > best) { best = b.totalImportance; idx = 1; }
+    if (a.totalImportance > best) { idx = 0; }
+    return idx;  // 0=sorting, 1=greedy, 2=dp
+}
+
+double euclidean(const Feat& a, const Feat& b) {
+    double d2 = 0;
+    d2 += pow(a.totalReq     - b.totalReq, 2);
+    d2 += pow(a.avail        - b.avail, 2);
+    d2 += pow(a.pressure     - b.pressure, 2);
+    d2 += pow(a.avgImp       - b.avgImp, 2);
+    d2 += pow(a.deadlineTight - b.deadlineTight, 2);
+    d2 += pow(a.impVar       - b.impVar, 2);
+    return sqrt(d2);
+}
+
+struct Sample {
+    Feat features;
+    int  label;
+};
+
+vector<Sample> genTrainingData(const vector<Scenario>& baseScenarios) {
+    vector<Sample> data;
+    mt19937 rng(123);
+    uniform_real_distribution<double> ratio(0.5, 1.6);
+
+    for (const auto& s : baseScenarios) {
+        
+        SelectionResult rs = runSorting(s);
+        SelectionResult rg = runGreedy(s);
+        SelectionResult rd = runDynamicProgramming(s);
+        data.push_back({getFeatures(s), bestStrategy(rs, rg, rd)});
+
+        
+        for (int k = 0; k < 3; k++) {
+            Scenario v = s;
+            v.totalAvailableTime = s.totalAvailableTime * ratio(rng);
+            v.name = s.name + " (var" + to_string(k+1) + ")";
+
+            SelectionResult r2 = runSorting(v);
+            SelectionResult g2 = runGreedy(v);
+            SelectionResult d2 = runDynamicProgramming(v);
+            data.push_back({getFeatures(v), bestStrategy(r2, g2, d2)});
+        }
+    }
+    return data;
+}
+
+int knnPredict(const Feat& query, const vector<Sample>& train, int k) {
+    vector<pair<double, int>> dists;
+    for (int i = 0; i < (int)train.size(); i++)
+        dists.push_back({euclidean(query, train[i].features), i});
+
+    sort(dists.begin(), dists.end());
+
+    int votes[3] = {0, 0, 0};
+    int lim = min(k, (int)dists.size());
+    for (int i = 0; i < lim; i++)
+        votes[train[dists[i].second].label]++;
+
+    int best = 0;
+    if (votes[2] > votes[best]) best = 2;  // prefer dp
+    if (votes[1] > votes[best]) best = 1;
+    return best;
+}
+
+// ============================================================================
+// Module 6: performance comparison
 // ============================================================================
 
-/*
- * TODO: Measure and compare the results of all algorithms:
- *         - Execution time (ms)
- *         - Tasks selected
- *         - Total study time used
- *         - Total importance achieved
- *         - Prediction correctness (k-NN vs actual best)
- *
- * Display results in a structured comparison table.
- */
+void showCompare(const Scenario& s) {
+    SelectionResult sr = runSorting(s);
+    SelectionResult gr = runGreedy(s);
+    SelectionResult dr = runDynamicProgramming(s);
+
+    cout << "\n  " << s.name;
+    cout << "  (avail=" << s.totalAvailableTime << "h, tasks=" << s.tasks.size() << ")\n";
+    cout << "  " << string(78, '-') << "\n";
+    cout << left
+         << setw(26) << "  Strategy"
+         << setw(9)  << "Selected"
+         << setw(9)  << "Time(h)"
+         << setw(12) << "Importance"
+         << setw(12) << "Exec(s)"
+         << "Note\n";
+    cout << "  " << string(78, '-') << "\n";
+
+    auto row = [](const SelectionResult& r) {
+        cout << left
+             << setw(26) << ("  " + r.algorithmName)
+             << setw(9)  << r.selectedTaskIds.size()
+             << setw(9)  << fixed << setprecision(1) << r.totalStudyTime
+             << setw(12) << r.totalImportance
+             << setw(12) << fixed << setprecision(6) << r.executionTime
+             << r.description << "\n";
+    };
+
+    row(sr); row(gr); row(dr);
+
+    cout << "  " << string(78, '-') << "\n";
+    int best = bestStrategy(sr, gr, dr);
+    string names[] = {"Sorting", "Greedy", "DP"};
+    cout << "  -> Best for this scenario: " << names[best] << "\n";
+}
 
 // ============================================================================
-// Main Function
+// main
 // ============================================================================
 
 int main() {
-    cout << "\n=====================================================================================" << endl;
-    cout << "  StudySmart AI - Smart Academic Planning Application" << endl;
-    cout << "  CST207 Design and Analysis of Algorithms" << endl;
-    cout << "  Group: [Your Group Name]" << endl;
-    cout << "=====================================================================================\n" << endl;
+    cout << "\n===== StudySmart AI =====\n";
+    cout << "  CST207 Design and Analysis of Algorithms\n";
+    cout << "  Group: [your group name]\n\n";
 
-    // TODO: Call scenario generation / input module
-    // TODO: Call Divide-and-Conquer / Sorting module
-    // TODO: Call Greedy algorithm module
-    // TODO: Call Dynamic Programming module
-    // TODO: Call AI/ML recommendation module
-    // TODO: Call performance measurement and comparison module
+    // ---- part 1: load scenarios from csv ----
+    vector<Scenario> scenarios = loadAllScenarios();
+    cout << "Read " << scenarios.size() << " scenarios from csv files.\n";
 
-    cout << "\n=====================================================================================" << endl;
-    cout << "  StudySmart AI - Execution Complete" << endl;
-    cout << "=====================================================================================\n" << endl;
+    // ---- part 2: run all 3 strategies on each scenario ----
+    cout << "\n========== Strategy Performance Comparison ==========";
+    for (const auto& s : scenarios) {
+        showCompare(s);
+    }
+
+    // ---- part 3: k-NN training and prediction ----
+    cout << "\n\n========== k-NN Strategy Recommendation ==========\n\n";
+
+    cout << "  Generating training data from excel scenarios...\n";
+    vector<Sample> trainData = genTrainingData(scenarios);
+    cout << "  Total training samples: " << trainData.size() << "\n";
+
+    int cnt[3] = {0, 0, 0};
+    for (const auto& t : trainData) cnt[t.label]++;
+    cout << "  Label breakdown: Sorting=" << cnt[0]
+         << "  Greedy=" << cnt[1]
+         << "  DP=" << cnt[2] << "\n\n";
+
+    const int K = 3;
+    int correct = 0;
+    string algoNames[] = {"Sorting", "Greedy", "DP"};
+
+    cout << "  " << left << setw(34) << "Scenario"
+         << setw(16) << "Predicted"
+         << setw(16) << "Actual Best"
+         << "Match\n";
+    cout << "  " << string(70, '-') << "\n";
+
+    for (const auto& s : scenarios) {
+        Feat f = getFeatures(s);
+        int pred = knnPredict(f, trainData, K);
+
+        SelectionResult rs = runSorting(s);
+        SelectionResult rg = runGreedy(s);
+        SelectionResult rd = runDynamicProgramming(s);
+        int actual = bestStrategy(rs, rg, rd);
+
+        bool match = (pred == actual);
+        if (match) correct++;
+
+        cout << left
+             << "  " << setw(34) << s.name
+             << setw(16) << algoNames[pred]
+             << setw(16) << algoNames[actual]
+             << (match ? "YES" : "NO") << "\n";
+    }
+
+    cout << "  " << string(70, '-') << "\n";
+    cout << "  Accuracy: " << correct << "/" << scenarios.size()
+         << " (" << fixed << setprecision(0)
+         << (100.0 * correct / scenarios.size()) << "%)\n";
 
     return 0;
 }

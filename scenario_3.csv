@@ -1,0 +1,16 @@
+Scenario 3: Deadline-focused|24
+T1,Attend Divide-and-Conquer Lecture,Lecture,3,7,2,3
+T2,Complete Greedy and DP Tutorial,Tutorial,3,8,2,4
+T3,Practice Algorithm Midterm Questions,Practice,2,7,1,3
+T4,Finish StudySmart AI Algorithm Module,Assignment,3,8,3,4
+T5,Review ERD and Normalization Concepts,Revision,3,7,1,3
+T6,Complete SQL Access Control Lab,Practice,2,7,2,3
+T7,Finish Database Project Report Section,Assignment,3,7,3,3
+T8,Attend Database Group Project Meeting,Assignment,2,5,2,2
+T9,Attend C++ File Handling Lecture,Lecture,2,6,4,3
+T10,Debug C++ Menu and Input Handling,Practice,3,7,3,3
+T11,Complete C++ Pointer and Vector Exercises,Tutorial,2,6,5,3
+T12,Revise Software Engineering Design Principles,Revision,3,7,4,3
+T13,Practice Use Case and Class Diagram Questions,Practice,3,8,2,4
+T14,Complete FYP Thesis Submission Draft,Assignment,4,8,3,4
+T15,Prepare FYP Presentation and Supervisor Meeting,Assignment,3,7,5,3
