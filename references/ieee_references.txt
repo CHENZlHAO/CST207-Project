@@ -1,0 +1,7 @@
+# References — Module 5 (k-NN / Decision Tree / Random Forest)
+
+[1] Gérard Biau, Erwan Scornet, "A random forest guided tour," Test, 2016. doi: 10.1007/s11749-016-0481-7.
+
+[2] S.R. Safavian, D. A. Landgrebe, "A survey of decision tree classifier methodology," IEEE Transactions on Systems Man and Cybernetics, 1991. doi: 10.1109/21.97458.
+
+[3] David W. Aha, Dennis Kibler, Marc K. Albert, "Instance-based learning algorithms," Machine Learning, 1991. doi: 10.1007/bf00153759.
