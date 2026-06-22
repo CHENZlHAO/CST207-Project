@@ -116,11 +116,13 @@ vector<Scenario> loadAllScenarios() {
  * Time Complexity: O(n log n)
  * Space Complexity: O(n)
  */
- double getEfficiencyScore(const StudyTask& task)
+ // Calculate efficiency score = importance / study time
+double getEfficiencyScore(const StudyTask& task)
 {
     return static_cast<double>(task.importance) / task.studyTime;
 }
 
+// Merge two sorted subarrays based on efficiency score
 void mergeByEfficiency(vector<StudyTask>& tasks, int left, int mid, int right)
 {
     int n1 = mid - left + 1;
@@ -129,6 +131,7 @@ void mergeByEfficiency(vector<StudyTask>& tasks, int left, int mid, int right)
     vector<StudyTask> L(n1);
     vector<StudyTask> R(n2);
 
+    // Copy data into temporary arrays
     for (int i = 0; i < n1; i++)
         L[i] = tasks[left + i];
 
@@ -137,11 +140,13 @@ void mergeByEfficiency(vector<StudyTask>& tasks, int left, int mid, int right)
 
     int i = 0, j = 0, k = left;
 
+    // Merge arrays in descending order of efficiency
     while (i < n1 && j < n2)
     {
         double scoreL = getEfficiencyScore(L[i]);
         double scoreR = getEfficiencyScore(R[j]);
 
+        // If efficiency is equal, higher importance gets priority
         if (scoreL > scoreR ||
             (scoreL == scoreR && L[i].importance > R[j].importance))
         {
@@ -153,6 +158,7 @@ void mergeByEfficiency(vector<StudyTask>& tasks, int left, int mid, int right)
         }
     }
 
+    // Copy remaining elements
     while (i < n1)
         tasks[k++] = L[i++];
 
@@ -160,6 +166,7 @@ void mergeByEfficiency(vector<StudyTask>& tasks, int left, int mid, int right)
         tasks[k++] = R[j++];
 }
 
+// Recursive Merge Sort
 void mergeSortByEfficiency(vector<StudyTask>& tasks, int left, int right)
 {
     if (left >= right)
@@ -173,12 +180,15 @@ void mergeSortByEfficiency(vector<StudyTask>& tasks, int left, int right)
     mergeByEfficiency(tasks, left, mid, right);
 }
 
+// Rank study tasks using Merge Sort and efficiency score
 SelectionResult runSorting(const Scenario& scenario)
 {
     clock_t startTime = clock();
 
+    // Create a local copy so original scenario data is not modified
     vector<StudyTask> tasks = scenario.tasks;
 
+    // Sort all tasks by efficiency
     if (!tasks.empty())
     {
         mergeSortByEfficiency(tasks, 0, tasks.size() - 1);
@@ -188,9 +198,7 @@ SelectionResult runSorting(const Scenario& scenario)
     double totalStudyTime = 0;
     int totalImportance = 0;
 
-    // Sorting module mainly produces a priority ranking.
-    // To fit the SelectionResult format, tasks are recorded in ranked order
-    // until the available study time is reached.
+    // Select tasks according to ranking until study time limit is reached
     for (const StudyTask& task : tasks)
     {
         if (totalStudyTime + task.studyTime <= scenario.totalAvailableTime)
@@ -204,12 +212,16 @@ SelectionResult runSorting(const Scenario& scenario)
     clock_t endTime = clock();
 
     SelectionResult result;
+
     result.algorithmName = "Sorting-based Ranking";
     result.selectedTaskIds = selectedTaskIds;
     result.totalStudyTime = totalStudyTime;
     result.totalImportance = totalImportance;
-    result.executionTime = static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC;
-    result.description = "Merge Sort ranks tasks by efficiency score.";
+    result.executionTime =
+        static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC;
+
+    result.description =
+        "Merge Sort ranks tasks by efficiency score.";
 
     return result;
 }
@@ -230,10 +242,11 @@ bool compareByEfficiency(const StudyTask& a, const StudyTask& b)
 {
     double ratioA = getEfficiencyScore(a);
     double ratioB = getEfficiencyScore(b);
-
+//If the efficiency scores are equal, prioritize the task with the shorter
     if (ratioA == ratioB)
         return a.studyTime < b.studyTime;
 
+//Sort in descending order cased on efficiency
     return ratioA > ratioB;
 }
 
@@ -243,12 +256,14 @@ SelectionResult runGreedy(const Scenario& scenario)
 
     vector<StudyTask> tasks = scenario.tasks;
 
+//Step 1:Sort all tasks
     sort(tasks.begin(), tasks.end(), compareByEfficiency);
 
     vector<string> selectedTaskIds;
     double totalStudyTime = 0;
     int totalImportance = 0;
 
+//Step 2:Iterate starting
     for (const StudyTask& task : tasks)
     {
         if (totalStudyTime + task.studyTime <= scenario.totalAvailableTime)
