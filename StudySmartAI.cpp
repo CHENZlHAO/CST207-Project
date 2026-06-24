@@ -119,7 +119,7 @@ vector<Scenario> loadAllScenarios() {
  // Calculate efficiency score = importance / study time
 double getEfficiencyScore(const StudyTask& task)
 {
-    return static_cast<double>(task.importance) / task.studyTime;
+    return (task.importance * 0.7) + ((10 - task.difficulty) * 0.3); 
 }
 
 // Merge two sorted subarrays based on efficiency score
@@ -240,15 +240,16 @@ SelectionResult runSorting(const Scenario& scenario)
  */
 bool compareByEfficiency(const StudyTask& a, const StudyTask& b)
 {
-    double ratioA = getEfficiencyScore(a);
-    double ratioB = getEfficiencyScore(b);
-//If the efficiency scores are equal, prioritize the task with the shorter
+    double ratioA = a.importance / (a.studyTime * 0.4 + a.deadline * 0.6); 
+    double ratioB = b.importance / (b.studyTime * 0.4 + b.deadline * 0.6); 
+    //If the efficiency scores are equal, prioritize the task with the shorter 
     if (ratioA == ratioB)
-        return a.studyTime < b.studyTime;
-
-//Sort in descending order cased on efficiency
+    {
+       return a.studyTime < b.studyTime; 
+//Sort in descending order cased on efficiency 
+    }
     return ratioA > ratioB;
-}
+} 
 
 SelectionResult runGreedy(const Scenario& scenario)
 {
@@ -425,10 +426,30 @@ Feat getFeatures(const Scenario& s) {
 
 int bestStrategy(const SelectionResult& a, const SelectionResult& b, const SelectionResult& c) {
     // dp 理论上最优，在同分的情况下优先选dp
-    int best = c.totalImportance, idx = 2;
-    if (b.totalImportance > best) { best = b.totalImportance; idx = 1; }
-    if (a.totalImportance > best) { idx = 0; }
-    return idx;  // 0=sorting, 1=greedy, 2=dp
+    double scoreA = a.totalImportance; 
+    double scoreB = b.totalImportance;
+    double scoreC = c.totalImportance;
+     if (a.selectedTaskIds.size() > b.selectedTaskIds.size()) 
+     {
+        scoreA += 0.5;
+    }
+    if (b.totalStudyTime < c.totalStudyTime) 
+    {
+        scoreB += 0.5; 
+    }
+    int bestIdx = 2;
+    double maxScore = scoreC;
+    if (scoreB > maxScore)
+    {
+        maxScore = scoreB; 
+        bestIdx = 1; 
+    }
+    if (scoreA > maxScore)
+    {
+        maxScore = scoreA; 
+        bestIdx = 0; 
+    }
+    return bestIdx;// 0=sorting, 1=greedy, 2=dp 
 }
 
 double euclidean(const Feat& a, const Feat& b) {
